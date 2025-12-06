@@ -4,15 +4,20 @@ build_dir=$1
 env_dir=$3
 working_dir=`pwd`
 
-# Download cloudflared. It will be at /app/vendor/cloudflared on dyno
-wget -q https://bin.equinox.io/c/VdrWdbjqyF/cloudflared-stable-linux-amd64.tgz
+# --- Download latest cloudflared for Linux amd64 ---
 mkdir -p $build_dir/vendor
-tar -C $build_dir/vendor -xzf cloudflared-stable-linux-amd64.tgz
-# Add cloudflared to PATH
+cd $build_dir/vendor
+echo "Downloading cloudflared..."
+CLOUDFLARED_URL=$(curl -s https://api.github.com/repos/cloudflare/cloudflared/releases/latest \
+  | grep browser_download_url \
+  | grep linux-amd64 \
+  | cut -d '"' -f 4)
+
+wget -q $CLOUDFLARED_URL -O cloudflared.tgz
+tar -xzf cloudflared.tgz
+chmod +x cloudflared
+rm cloudflared.tgz
+
+# --- Add cloudflared to PATH ---
 mkdir -p $build_dir/.profile.d
 echo 'PATH=$PATH:$HOME/vendor' > $build_dir/.profile.d/cloudflared.sh
-# Pull config from ENV
-mkdir -p $build_dir/.cloudflared
-cp $env_dir/TUNNEL_CERT $build_dir/.cloudflared/cert.pem
-tunnel_id=`cat $env_dir/TUNNEL_ID`
-cp $env_dir/TUNNEL_CONFIG $build_dir/.cloudflared/${tunnel_id}.json
