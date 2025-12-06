@@ -4,20 +4,23 @@ build_dir=$1
 env_dir=$3
 working_dir=`pwd`
 
-# --- Download latest cloudflared for Linux amd64 ---
+echo "=== Installing cloudflared ==="
+
+# Create vendor directory
 mkdir -p $build_dir/vendor
-cd $build_dir/vendor
-echo "Downloading cloudflared..."
-CLOUDFLARED_URL=$(curl -s https://api.github.com/repos/cloudflare/cloudflared/releases/latest \
-  | grep browser_download_url \
-  | grep linux-amd64 \
-  | cut -d '"' -f 4)
 
-wget -q $CLOUDFLARED_URL -O cloudflared.tgz
-tar -xzf cloudflared.tgz
-chmod +x cloudflared
-rm cloudflared.tgz
+# Get latest cloudflared release
+LATEST=$(curl -s https://api.github.com/repos/cloudflare/cloudflared/releases/latest \
+  | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
-# --- Add cloudflared to PATH ---
+echo "Latest cloudflared version: $LATEST"
+
+# Download standalone binary
+wget -q -O $build_dir/vendor/cloudflared https://github.com/cloudflare/cloudflared/releases/download/$LATEST/cloudflared-linux-amd64
+
+# Make it executable
+chmod +x $build_dir/vendor/cloudflared
+
+# Add cloudflared to PATH
 mkdir -p $build_dir/.profile.d
-echo 'PATH=$PATH:$HOME/vendor' > $build_dir/.profile.d/cloudflared.sh
+echo 'export PATH=$PATH:$HOME/vendor' > $build_dir/.profile.d/cloudflared.sh
