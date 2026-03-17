@@ -15,10 +15,17 @@ LATEST=$(curl -s https://api.github.com/repos/cloudflare/cloudflared/releases/la
 
 echo "Latest cloudflared version: $LATEST"
 
-# Download standalone binary
-wget -q -O $build_dir/vendor/cloudflared https://github.com/cloudflare/cloudflared/releases/download/$LATEST/cloudflared-linux-amd64
+echo "Downloading cloudflared..."
 
-# Make it executable
+curl -L --fail --retry 3 \
+  https://github.com/cloudflare/cloudflared/releases/download/$LATEST/cloudflared-linux-amd64 \
+  -o $build_dir/vendor/cloudflared
+
+if [ ! -s $build_dir/vendor/cloudflared ]; then
+  echo "ERROR: cloudflared download failed"
+  exit 1
+fi
+
 chmod +x $build_dir/vendor/cloudflared
 
 # Add cloudflared to PATH
